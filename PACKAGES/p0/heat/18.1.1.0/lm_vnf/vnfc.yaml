@@ -47,7 +47,7 @@ resources:
             __index__:  { get_param: index }
       image: { get_param: image }
       flavor: { get_param: flavor }
-      networks: 
+      networks:
        - port: { get_resource: management_port }
        - port: { get_resource: service_port }
       user_data_format: RAW
@@ -77,12 +77,12 @@ resources:
       security_groups:
         - { get_param: security_group }
 
-  fip: 
+  fip:
     type: OS::Neutron::FloatingIP
-    properties: 
+    properties:
       floating_network: { get_param: management_provider_network }
 ###      dns_domain: { get_param: dns_domain }
-###      dns_name: 
+###      dns_name:
 ###        str_replace:
 ###          template:
 ###            lm__index__

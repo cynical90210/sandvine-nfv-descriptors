@@ -1,0 +1,200 @@
+heat_template_version: 2016-04-08
+
+
+description: >
+  A network service (NS) representing a complete PL system
+
+parameters:
+
+#  psm_volumes:
+#    type: comma_delimited_list
+#    description: List of IDs for the PSM volumes to use. First in list is for the first PSM VM etc.
+#
+#  pic_volumes:
+#    type: comma_delimited_list
+#    description: List of IDs for the PIC volumes to use. First in list is for the first PIC VM etc.
+
+  management_provider_network:
+    type: string
+    description: Name of the provider network use for management network Floating IPs.
+
+  management_provider_network_uuid:
+    type: comma_delimited_list
+    description: UUID of the provider network use for management network Floating IPs.
+    default:
+
+  subscriber_provider_network:
+    type: string
+    description: Name or ID of the provider network use for subscriber network Floating IPs.
+
+  dns_domain:
+    type: string
+    description: Name of DNS domain to use for Floating IP networks.
+
+  cik:
+    type: string
+    description: Base 64 encoded string of CIK file content.
+
+resources:
+#
+#  General Networks
+#
+  networks:
+    type: packetlogic::standard_networks::ns
+    properties:
+      management_provider_network: { get_param: management_provider_network }
+      subscriber_provider_network: { get_param: subscriber_provider_network }
+      dns_domain: { get_param: dns_domain }
+#
+#  General VNFs
+#
+  lm_vnf:
+    type: packetlogic::lm::vnf
+    properties:
+      management_network: { get_attr: [networks,management_net] }
+      management_provider_network: { get_param: management_provider_network }
+      dns_domain: { get_param: dns_domain }
+      service_network: { get_attr: [networks,service_net] }
+      cik: { get_param: cik }
+
+  psm_vnf:
+    type: packetlogic::psm::vnf
+    properties:
+      management_network: { get_attr: [networks,management_net] }
+      service_network: { get_attr: [networks,service_net] }
+      subscriber_network: { get_attr: [networks,subscriber_net] }
+      volumes: { get_param: psm_volumes }
+      management_provider_network: { get_param: management_provider_network }
+      dns_domain: { get_param: dns_domain }
+
+  pic_vnf:
+    type: packetlogic::pic::vnf
+    properties:
+      management_network: { get_attr: [networks,management_net] }
+      service_network: { get_attr: [networks,service_net] }
+      volumes: { get_param: pic_volumes }
+      management_provider_network: { get_param: management_provider_network }
+      dns_domain: { get_param: dns_domain }
+#
+#  Channel Networks
+#
+# "count" property defines number of PRE VNF Virtual Channels
+# "set" property defines part of VNs name
+
+  pre1_channels:
+    type: packetlogic::contrail_networks::ns
+    properties:
+      count: 1
+      set: pre1
+
+#  pre2_channels:
+#   type: packetlogic::channel_networks::ns
+#    properties:
+#      count: 2
+#      set: pre2
+
+#
+#  PRE VNFs
+#
+# "channel_networks_count" property should be equal to "count" property from preX_channels resource
+
+  pre1_vnf:
+    type: packetlogic::pre::vnf_contrail
+    properties:
+      name: pre1
+      management_network: { get_attr: [networks,management_net] }
+      service_network: { get_attr: [networks,service_net] }
+      qsync_network: { get_attr: [networks,qsync_net] }
+      flowsync_network: { get_attr: [networks,flowsync_net] }
+      dummy_network: { get_attr: [networks,dummy_net] }
+      channel_networks: { get_attr: [pre1_channels,networks] }
+      channel_ports: { get_attr: [pre1_channels,ports] }
+      management_provider_network: { get_param: management_provider_network }
+      dns_domain: { get_param: dns_domain }
+      channel_networks_count: 1
+#
+# TREX VNF
+#
+  trex:
+    type: OS::Nova::Server
+    properties:
+      name: trex-contrail
+      key_name: macbook
+      image: TREX
+      flavor: TREX
+      networks:
+        repeat:
+          template:
+            network : <%network%>
+          for_each:
+            <%network%> :
+              str_split:
+                - ','
+                -  str_replace:
+                     template: 
+                        __content__
+                     params:
+                        __content__: { list_join: [',',{str_split: [',',{ list_join: [',',{get_param: management_provider_network_uuid}, { get_attr: [pre1_channels,networks] }] } ] } ] }
+
+#  pre2_vnf:
+#    type: packetlogic::pre::vnf
+#    properties:
+#      name: pre2
+#      management_network: { get_attr: [networks,management_net] }
+#      service_network: { get_attr: [networks,service_net] }
+#      qsync_network: { get_attr: [networks,qsync_net] }
+#      flowsync_network: { get_attr: [networks,flowsync_net] }
+#      channel_networks: { get_attr: [pre2_channels,networks] }
+#      management_provider_network: { get_param: management_provider_network }
+#      dns_domain: { get_param: dns_domain }
+#      channel_networks_count: 4
+
+#
+# PRE VNF scaling
+#
+  pre_scaling_group:
+    type: OS::Heat::AutoScalingGroup
+    properties:
+      cooldown: 60
+      desired_capacity: 0
+      max_size: 3
+      min_size: 0
+      resource:
+        type: packetlogic::pre_scaling::ns
+        properties:
+          management_network: { get_attr: [networks,management_net] }
+          service_network: { get_attr: [networks,service_net] }
+          qsync_network: { get_attr: [networks,qsync_net] }
+          dummy_network: { get_attr: [networks,dummy_net] }
+          flowsync_network: { get_attr: [networks,flowsync_net] }
+          channel_networks: { get_attr: [pre1_channels,networks] }
+          channel_ports: { get_attr: [pre1_channels,ports] }
+          management_provider_network: { get_param: management_provider_network }
+          dns_domain: { get_param: dns_domain }
+          channel_networks_count: 1
+          service_instance_fqname:  { get_attr: [pre1_channels,service_instance_fqname] }
+          trans_int_net_fqname: { get_attr: [pre1_channels,trans_int_net_fqname] }
+          trans_ext_net_fqname: { get_attr: [pre1_channels,trans_ext_net_fqname] }
+
+  scaleout_policy:
+    type: OS::Heat::ScalingPolicy
+    properties:
+      adjustment_type: change_in_capacity
+      auto_scaling_group_id: { get_resource: pre_scaling_group }
+      cooldown: 60
+      scaling_adjustment: 1
+
+  scalein_policy:
+    type: OS::Heat::ScalingPolicy
+    properties:
+      adjustment_type: change_in_capacity
+      auto_scaling_group_id: { get_resource: pre_scaling_group }
+      cooldown: 60
+      scaling_adjustment: -1
+
+outputs:
+  alarm_url_scaleout:
+    value: {get_attr: [scaleout_policy, alarm_url] }
+
+  alarm_url_scalein:
+    value: {get_attr: [scalein_policy, alarm_url] }

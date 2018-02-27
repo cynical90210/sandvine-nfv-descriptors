@@ -88,7 +88,7 @@ resources:
       set: pre1
 
   pre2_channels:
-    type: packetlogic::channel_networks::ns
+   type: packetlogic::channel_networks::ns
     properties:
       count: 2
       set: pre2
@@ -110,7 +110,7 @@ resources:
       channel_networks: { get_attr: [pre1_channels,networks] }
       management_provider_network: { get_param: management_provider_network }
       dns_domain: { get_param: dns_domain }
-      channel_networks_count: 2
+      channel_networks_count: 1
 
   pre2_vnf:
     type: packetlogic::pre::vnf
@@ -124,6 +124,3 @@ resources:
       management_provider_network: { get_param: management_provider_network }
       dns_domain: { get_param: dns_domain }
       channel_networks_count: 4
-
-
-

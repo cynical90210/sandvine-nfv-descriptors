@@ -1,0 +1,404 @@
+heat_template_version: 2016-04-08
+
+description: >
+  Contrail networks used for a single channel
+
+parameters:
+
+  index:
+    type: number
+    description: Index number
+    label: Index
+
+  context:
+    type: string
+    description: Name/id of the context that the channel belongs to
+
+  ipam:
+    type: string
+    default: "default-domain:default-project:default-network-ipam"
+    description: IP Address Management FQDN.
+
+  allow_transit:
+    type: boolean
+    default: True
+    description: Enable or disable virtual network for transit traffic.
+
+  forwarding_mode:
+    type: string
+    constraints:
+      - allowed_values: [l2_l3, l2, l3]
+    default: "l2_l3"
+    description: Forwarding mode for virtual network.
+
+  rpf:
+    type: string
+    constraints:
+      - allowed_values: [enable, disable]
+    default: "disable"
+    description: Enable or disable Reverse Path Forwarding
+
+  int_net_prefix:
+    type: string
+    default: 192.168.80.0
+    description: Prefix for left VN where Network Policy will be applied
+
+  int_net_prefix_len:
+    type: string
+    default: 24
+    description: left VN prefix length
+
+  ext_net_prefix:
+    type: string
+    default: 192.168.81.0
+    description: Prefix for right VN where Network Policy will be applied
+
+  ext_net_prefix_len:
+    type: string
+    default: 24
+    description: right VN prefix length
+
+  int_net_fqdn:
+    type: string
+    default: "default-domain:demo:pre-left"
+
+  ext_net_fqdn:
+    type: string
+    default: "default-domain:demo:pre-right"
+
+  l_vn_prefix:
+    type: string
+    default: 192.168.210.0
+    description: Prefix for left VN where vPRE will be connected. Should not be the same as int_net_prefix
+
+  l_vn_prefix_len:
+    type: string
+    default: 24
+    description: left VN prefix length
+
+  r_vn_prefix:
+    type: string
+    default: 192.168.220.0
+    description: Prefix for right VN where vPRE will be connected. Should not be the same as ext_net_prefix
+
+  r_vn_prefix_len:
+    type: string
+    default: 24
+    description: right VN prefix length
+
+  int_net_route_prefix:
+    type: string
+    default: 192.168.80.0/24
+
+  ext_net_route_prefix:
+    type: string
+    default: 192.168.81.0/24
+
+  service_template_name:
+    type: comma_delimited_list
+    description: name of service template
+
+resources:
+
+# Left Virtual Network attached to Network Policy
+
+  int_net:
+    type: OS::ContrailV2::VirtualNetwork
+    depends_on: [ NetworkPolicy ]
+    properties:
+      name: pre-left
+      network_ipam_refs: [{ get_param: ipam }]
+      flood_unknown_unicast: True
+      network_ipam_refs_data:
+        [{
+          network_ipam_refs_data_ipam_subnets:
+            [{
+              network_ipam_refs_data_ipam_subnets_subnet:
+                {
+                  network_ipam_refs_data_ipam_subnets_subnet_ip_prefix: { get_param: int_net_prefix },
+                  network_ipam_refs_data_ipam_subnets_subnet_ip_prefix_len: { get_param: int_net_prefix_len },
+                },
+              network_ipam_refs_data_ipam_subnets_enable_dhcp: False
+            }]
+         }]
+      virtual_network_properties:
+        virtual_network_properties_allow_transit: { get_param: allow_transit }
+        virtual_network_properties_forwarding_mode: { get_param: forwarding_mode }
+        virtual_network_properties_rpf: { get_param: rpf }
+      network_policy_refs: [{ list_join: [':', { get_attr: [ NetworkPolicy, fq_name ] } ] }]
+      network_policy_refs_data:
+        [{
+          network_policy_refs_data_sequence:
+            {
+              network_policy_refs_data_sequence_major: 0,
+              network_policy_refs_data_sequence_minor: 0,
+            },
+        }]
+
+# Right Virtual Network attached to Network Policy
+
+  ext_net:
+    type: OS::ContrailV2::VirtualNetwork
+    depends_on: [ NetworkPolicy ]
+    properties:
+      name: pre-right
+      network_ipam_refs: [{ get_param: ipam }]
+      flood_unknown_unicast: True
+      network_ipam_refs_data:
+        [{
+          network_ipam_refs_data_ipam_subnets:
+            [{
+              network_ipam_refs_data_ipam_subnets_subnet:
+                {
+                  network_ipam_refs_data_ipam_subnets_subnet_ip_prefix: { get_param: ext_net_prefix },
+                  network_ipam_refs_data_ipam_subnets_subnet_ip_prefix_len: { get_param: ext_net_prefix_len },
+                },
+              network_ipam_refs_data_ipam_subnets_enable_dhcp: False
+            }]
+         }]
+      virtual_network_properties:
+        virtual_network_properties_allow_transit: { get_param: allow_transit }
+        virtual_network_properties_forwarding_mode: { get_param: forwarding_mode }
+        virtual_network_properties_rpf: { get_param: rpf }
+      network_policy_refs: [{ list_join: [':', { get_attr: [ NetworkPolicy, fq_name ] } ] }]
+      network_policy_refs_data:
+        [{
+          network_policy_refs_data_sequence:
+            {
+              network_policy_refs_data_sequence_major: 0,
+              network_policy_refs_data_sequence_minor: 0,
+            },
+        }]
+
+# transparent Left PRE Virtual Network where PRE will be connected
+
+  trans_int_net:
+    type: OS::ContrailV2::VirtualNetwork
+    properties:
+      name: trans-pre-left
+      network_ipam_refs: [{ get_param: ipam }]
+      flood_unknown_unicast: True
+      network_ipam_refs_data:
+        [{
+          network_ipam_refs_data_ipam_subnets:
+            [{
+              network_ipam_refs_data_ipam_subnets_subnet:
+                {
+                  network_ipam_refs_data_ipam_subnets_subnet_ip_prefix: { get_param: l_vn_prefix },
+                  network_ipam_refs_data_ipam_subnets_subnet_ip_prefix_len: { get_param: l_vn_prefix_len },
+                },
+              network_ipam_refs_data_ipam_subnets_enable_dhcp: False
+            }]
+         }]
+      virtual_network_properties:
+        virtual_network_properties_allow_transit: { get_param: allow_transit }
+        virtual_network_properties_forwarding_mode: { get_param: forwarding_mode }
+        virtual_network_properties_rpf: { get_param: rpf }
+
+
+# transparent right PRE Virtual Network where PRE will be connected
+
+  trans_ext_net:
+    type: OS::ContrailV2::VirtualNetwork
+    depends_on: [ NetworkPolicy ]
+    properties:
+      name: trans-pre-right
+      network_ipam_refs: [{ get_param: ipam }]
+      flood_unknown_unicast: True
+      network_ipam_refs_data:
+        [{
+          network_ipam_refs_data_ipam_subnets:
+            [{
+              network_ipam_refs_data_ipam_subnets_subnet:
+                {
+                  network_ipam_refs_data_ipam_subnets_subnet_ip_prefix: { get_param: r_vn_prefix },
+                  network_ipam_refs_data_ipam_subnets_subnet_ip_prefix_len: { get_param: r_vn_prefix_len },
+                },
+              network_ipam_refs_data_ipam_subnets_enable_dhcp: False
+            }]
+         }]
+      virtual_network_properties:
+        virtual_network_properties_allow_transit: { get_param: allow_transit }
+        virtual_network_properties_forwarding_mode: { get_param: forwarding_mode }
+        virtual_network_properties_rpf: { get_param: rpf }
+
+# PRE Service Instance
+
+  ServiceInstance:
+    type: OS::ContrailV2::ServiceInstance
+    properties:
+      name:
+        str_replace:
+          template:
+            __context__-__index__-pre-si
+          params:
+            __index__: { get_param: index }
+            __context__: { get_param: context }
+      service_instance_properties:
+        {
+          service_instance_properties_interface_list:
+            [
+              {
+              service_instance_properties_interface_list_virtual_network:
+                {
+                   get_param: int_net_fqdn
+                },
+              },
+              {
+              service_instance_properties_interface_list_virtual_network:
+                {
+                   get_param: ext_net_fqdn
+                },
+              }
+            ]
+        }
+      service_template_refs: [{ list_join: [':', { get_param: service_template_name } ] }]
+
+# Not mandatory route table in left and right VNs, can be used to propagate 0.0.0.0/0 route
+#
+#  if_pre_left_route_table:
+#    type: OS::ContrailV2::InterfaceRouteTable
+#    depends_on: [ ServiceInstance ]
+#    properties:
+#      interface_route_table_routes:
+#        {
+#          interface_route_table_routes_route: [{ interface_route_table_routes_route_prefix: { get_param: int_net_route_prefix } }]
+#        }
+#
+#  if_pre_right_route_table:
+#    type: OS::ContrailV2::InterfaceRouteTable
+#    depends_on: [ ServiceInstance ]
+#    properties:
+#      interface_route_table_routes:
+#        {
+#          interface_route_table_routes_route: [{ interface_route_table_routes_route_prefix: { get_param: ext_net_route_prefix } }]
+#        }
+
+# Port Tuple object for PRE service instance
+
+  PortTuple:
+    type: OS::ContrailV2::PortTuple
+    depends_on: [ ServiceInstance ]
+    properties:
+      service_instance: { list_join: [':', { get_attr: [ ServiceInstance, fq_name ] } ] }
+
+# PRE VM port in VN-left, attached to Port Tuple
+
+  si_pre_left:
+    type: OS::ContrailV2::VirtualMachineInterface
+    depends_on: [ PortTuple ]
+    properties:
+      virtual_machine_interface_properties:
+        {
+          virtual_machine_interface_properties_service_interface_type: "left",
+        }
+      port_tuple_refs: [{ get_resource: PortTuple }]
+      virtual_network_refs: [{ list_join: [':', { get_attr: [ trans_int_net, fq_name ] } ] }]
+#      interface_route_table_refs: [{ list_join: [':', { get_attr: [ if_pre_left_route_table, fq_name ] } ] }]
+
+# PRE VM port in VN-right, attached to Port Tuple
+
+  si_pre_right:
+    type: OS::ContrailV2::VirtualMachineInterface
+    depends_on: [ PortTuple ]
+    properties:
+      virtual_machine_interface_properties:
+        {
+          virtual_machine_interface_properties_service_interface_type: "right",
+        }
+      port_tuple_refs: [{ get_resource: PortTuple }]
+      virtual_network_refs: [{ list_join: [':', { get_attr: [ trans_ext_net, fq_name ] } ] }]
+#      interface_route_table_refs: [{ list_join: [':', { get_attr: [ if_pre_right_route_table, fq_name ] } ] }]
+
+# PRE VM port IP address
+
+  si_pre_iip_left:
+    type: OS::ContrailV2::InstanceIp
+    depends_on: [ si_pre_left ]
+    properties:
+      virtual_machine_interface_refs: [{ get_resource: si_pre_left }]
+      virtual_network_refs: [{ list_join: [':', { get_attr: [ trans_int_net, fq_name ] } ] }]
+
+# PRE VM port IP address
+
+  si_pre_iip_right:
+    type: OS::ContrailV2::InstanceIp
+    depends_on: [ si_pre_right ]
+    properties:
+      virtual_machine_interface_refs: [{ get_resource: si_pre_right }]
+      virtual_network_refs: [{ list_join: [':', { get_attr: [ trans_ext_net, fq_name ] } ] }]
+
+# Network Policy to allow traffic from VN-left to VN-right and vice versa, attached to VN-left and VN-rigth. Define traffic to pass trough PRE Service Instance
+
+  NetworkPolicy:
+    type: OS::ContrailV2::NetworkPolicy
+    properties:
+      name:
+        str_replace:
+          template:
+            __context__-__index__-policy
+          params:
+            __index__: { get_param: index }
+            __context__: { get_param: context }
+      network_policy_entries: {
+        network_policy_entries_policy_rule: [{
+          network_policy_entries_policy_rule_direction: "<>",
+          network_policy_entries_policy_rule_protocol: "any",
+          network_policy_entries_policy_rule_src_ports: [{
+            network_policy_entries_policy_rule_src_ports_start_port: -1,
+            network_policy_entries_policy_rule_src_ports_end_port: -1
+                                }],
+          network_policy_entries_policy_rule_dst_ports: [{
+            network_policy_entries_policy_rule_dst_ports_start_port: -1,
+            network_policy_entries_policy_rule_dst_ports_end_port: -1
+                                }],
+          network_policy_entries_policy_rule_dst_addresses: [{
+            network_policy_entries_policy_rule_dst_addresses_virtual_network: { get_param: int_net_fqdn }
+
+                                }],
+          network_policy_entries_policy_rule_src_addresses: [{
+            network_policy_entries_policy_rule_src_addresses_virtual_network: { get_param: ext_net_fqdn }
+                                }],
+          network_policy_entries_policy_rule_action_list: {
+            network_policy_entries_policy_rule_action_list_simple_action: "pass",
+            network_policy_entries_policy_rule_action_list_apply_service: [{ list_join: [':', { get_attr: [ ServiceInstance, fq_name ] } ] }]
+                                    }
+        }]
+      }
+
+outputs:
+  int_net_name:
+    value: { get_attr: [int_net,display_name]}
+  ext_net_name:
+    value: { get_attr: [ext_net,display_name]}
+
+  trans_int_net_fqname:
+    value:
+      list_join: [ ':', { get_attr: [trans_int_net,fq_name]}]
+  trans_ext_net_fqname:
+    value:
+      list_join: [ ':', { get_attr: [trans_ext_net,fq_name]}]
+
+  service_instance_fqname:
+    value:
+      list_join: [ ':', { get_attr: [ServiceInstance,fq_name]}]
+#      { get_attr: [ServiceInstance,fq_name]}
+
+  int_net:
+    value: { get_attr: [int_net,show,uuid] }
+  ext_net:
+    value: { get_attr: [ext_net,show,uuid] }
+  networks:
+    value:
+      str_replace:
+        template: __int_net__,__ext_net__
+        params:
+          __int_net__: { get_attr: [int_net,show,uuid] }
+          __ext_net__: { get_attr: [ext_net,show,uuid] }
+  ports:
+    value:
+      str_replace:
+        template: __int_net__,__ext_net__
+        params:
+          __int_net__: { get_attr: [si_pre_left,show,uuid] }
+          __ext_net__: { get_attr: [si_pre_right,show,uuid] }

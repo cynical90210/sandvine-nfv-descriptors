@@ -1,12 +1,9 @@
 heat_template_version: 2016-04-08
 
-
 description: >
   A stack with 1 vPRE VM and associated resources
 
 parameters:
-
-
 
   name:
     type: string
@@ -23,9 +20,7 @@ parameters:
     type: comma_delimited_list
     default: ""
 
-
 resources:
-
 
   server:
     type: OS::Nova::Server
@@ -44,7 +39,7 @@ resources:
               str_split:
                 - ','
                 -  str_replace:
-                     template: 
+                     template:
                         __content__
                      params:
                         __content__: { list_join: [',',{str_split: [',',{ list_join: [',',{get_param: management_ports}, {get_param: channel_ports}] } ] } ] }
@@ -53,6 +48,9 @@ resources:
     type: OS::Heat::CloudConfig
     properties:
       cloud_config:
+
+
+
         merge_how: 'dict(recurse_array,no_replace)+list(append)'
         bootcmd:
           - ["set-aux-interfaces-qty", "2"]
