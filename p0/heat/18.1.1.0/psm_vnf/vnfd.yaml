@@ -1,0 +1,97 @@
+heat_template_version: 2016-04-08
+
+
+description: >
+  A PSM VNF
+
+parameters:
+
+  management_network:
+    type: string
+    description: Management network
+    label: Management net
+    default: management_net
+
+  service_network:
+    type: string
+    description: Service network
+    label: Service net
+    default: service_net
+
+  subscriber_network:
+    type: string
+    description: Subscriber network
+    label: Subscriber net
+    default: subscriber_net
+
+  count:
+    type: number
+    default: 2
+
+  psm_flavor:
+    type: string
+    description: PSM sizes
+    label: PSM flavor
+    default: PSM-FLAVOR
+
+  volumes:
+    type: comma_delimited_list
+
+  dns_domain:
+    type: string
+
+  management_provider_network:
+    type: string
+
+
+resources:
+
+
+  servers:
+    type: OS::Heat::ResourceGroup
+    properties:
+      count: { get_param: count }
+      resource_def: 
+        type: packetlogic::psm::vnfc
+        properties:
+          index: "%index%"
+          flavor: { get_param: psm_flavor }
+          image: STATS-18.2.1.0
+          management_network: { get_param: management_network }
+          service_network: { get_param: service_network }
+          cluster_network: { get_resource: cluster_net }
+          subscriber_network: { get_param: subscriber_network }
+          volume_ids: { get_param:  volumes }
+          security_group: { get_resource: security_group }
+          management_provider_network: { get_param: management_provider_network }
+          dns_domain: { get_param: dns_domain }
+
+
+  security_group:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      name: psm-security-group
+      rules:
+        - protocol: icmp
+        - protocol: tcp
+          port_range_min: 1
+          port_range_max: 65535
+        - protocol: udp
+          port_range_min: 1
+          port_range_max: 65535
+
+
+  cluster_net:
+    type: OS::Neutron::Net
+    properties:
+      name: PSM cluster (koi) network
+
+  cluster_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network: { get_resource: cluster_net }
+      name: vPSM cluster subnet
+      cidr: 192.168.210.0/24
+      enable_dhcp: True
+
+
