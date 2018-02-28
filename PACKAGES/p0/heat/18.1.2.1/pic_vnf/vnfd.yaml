@@ -49,7 +49,7 @@ resources:
         properties:
           index: "%index%"
           flavor: { get_param: flavor }
-          image: STATS-18.2.1.0
+          image: STATS-18.1.2.1
           management_network: { get_param: management_network }
           service_network: { get_param: service_network }
           storage_network: { get_resource: storage_net }

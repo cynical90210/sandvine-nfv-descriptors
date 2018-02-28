@@ -56,7 +56,7 @@ resources:
     properties:
       name: { get_param: name }
       flavor: { get_param: flavor }
-      image: PLOS_VIRTIO_CLOUD-18.2.1.0
+      image: PLOS_VIRTIO_CLOUD-18.1.2.1
       management_ports: [{get_attr: [management_port,show,id]},{get_attr: [service_port,show,id]},{get_attr: [qsync_port,show,id]},{get_attr: [flowsync_port,show,id]},{get_attr: [monitor_port,show,id]}] 
       channel_ports: { get_attr: [channels,ports] }
 

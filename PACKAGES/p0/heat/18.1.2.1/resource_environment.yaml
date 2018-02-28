@@ -26,6 +26,14 @@
    "packetlogic::pre::vnf_contrail":    https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/pre_vnf/vnfd_contrail.yaml
    "packetlogic::pre_scaling::ns":    https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/pre_vnf/pre_scaling_ns.yamlpacketlogic::lm::vnf
    "packetlogic::lm::vnfc":    https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/lm_vnf/vnfc.yaml
+   "packetlogic::pic::vnf":    https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/pic_vnf/vnfd.yaml
+   "packetlogic::pic::vnfc":    https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/pic_vnf/vnfc.yaml
+   "packetlogic::psm::vnf":    https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/psm_vnf/vnfd.yaml
+   "packetlogic::psm::vnfc":    https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/psm_vnf/vnfc.yaml
+   "packetlogic::channel_networks::channel":    https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/channel_networks_ns/channel.yaml
+   "packetlogic::channel_networks::ns":    https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/channel_networks_ns/nsd.yaml
+   "packetlogic::pre_group::ns":    https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/pre_group_ns/nsd.yaml
+   "packetlogic::pre_group::balancer":    https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/pre_group_ns/balancer.yaml
    "packetlogic::contrail_networks::channel":    https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/contrail_networks_ns/contrail_channel.yaml
    "packetlogic::contrail_networks::ns":    https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/contrail_networks_ns/nsd.yaml
    "packetlogic::standard_networks::ns":    https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/standard_networks_ns/nsd.yaml
@@ -45,6 +53,17 @@
    "packetlogic::channel_networks::ns":    https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/channel_networks_ns/nsd.yaml
    "packetlogic::pre_group::ns":    https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/pre_group_ns/nsd.yaml
    "packetlogic::pre_group::balancer":    https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/pre_group_ns/balancer.yaml
+   "packetlogic::contrail_networks::channel":    https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/contrail_networks_ns/contrail_channel.yaml
+   "packetlogic::contrail_networks::ns":    https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/contrail_networks_ns/nsd.yaml
+   "packetlogic::standard_networks::ns":    https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/standard_networks_ns/nsd.yaml
+   "packetlogic::pre::vnf":    https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/pre_vnf/vnfd.yaml
+   "packetlogic::pre::vnfc":    https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/pre_vnf/vnfc.yaml
+   "packetlogic::pre::channel_ports":    https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/pre_vnf/channel_ports.yaml
+   "packetlogic::pre::channel_port":    https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/pre_vnf/channel_port.yaml
+   "packetlogic::pre::vnf_indexed":    https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/pre_vnf/vnfd_indexed.yaml
+   "packetlogic::pre::vnf_contrail":    https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/pre_vnf/vnfd_contrail.yaml
+   "packetlogic::pre_scaling::ns":    https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/pre_vnf/pre_scaling_ns.yamlpacketlogic::lm::vnf
+   "packetlogic::lm::vnfc":    https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/lm_vnf/vnfc.yaml
    "packetlogic::pic::vnf":    https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/pic_vnf/vnfd.yaml
    "packetlogic::pic::vnfc":    https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/pic_vnf/vnfc.yaml
    "packetlogic::psm::vnf":    https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/psm_vnf/vnfd.yaml
