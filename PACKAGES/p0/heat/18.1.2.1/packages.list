@@ -1,0 +1,12 @@
+https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/lm_vnf-p0-18.1.2.1.tar.gz
+https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/pic_vnf-p0-18.1.2.1.tar.gz
+https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/pre_vnf-p0-18.1.2.1.tar.gz
+https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/psm_vnf-p0-18.1.2.1.tar.gz
+https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/channel_networks_ns-p0-18.1.2.1.tar.gz
+https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/contrail_networks_ns-p0-18.1.2.1.tar.gz
+https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/packetlogic_example_ns-p0-18.1.2.1.tar.gz
+https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/pre_group_example_ns-p0-18.1.2.1.tar.gz
+https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/pre_group_ns-p0-18.1.2.1.tar.gz
+https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/single_pre_ns-p0-18.1.2.1.tar.gz
+https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/standard_networks_ns-p0-18.1.2.1.tar.gz
+https://raw.githubusercontent.com/sandvine/sandvine-nfv-descriptors/master/PACKAGES/p0/heat/18.1.2.1/vim_volumes_ns-p0-18.1.2.1.tar.gz
