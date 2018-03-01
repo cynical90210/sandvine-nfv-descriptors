@@ -20,6 +20,18 @@ Currently the following packages are provided for OSM on-boarding
 * Channel networks NS package
 * PacketLogic example NS package
 
+### Rift packages
+
+Rift defines a package format and provides on-boarding of these packages for NS and VNF.
+Currently the following packages are provided for Rift on-boarding
+* PRE VNF package
+* PSM VNF package
+* PIC VNF package
+* LM VNF package (includes Elements and Licence Manager)
+* Standard networks NS package
+* Channel networks NS package
+* PacketLogic example NS package
+
 ### Openstack Heat packages
 
 OpenStack Heat does not define a package format, but we have organised the HOTs (the Heat templates) required for PacketLogic deployment in and identical structure as for the OSM packages (and hopefully the same structure for the ETSI packages). The Heat packages consists of the Heat template files that make up the "descriptors" for the particular function represented by the package.
@@ -57,8 +69,8 @@ For the list of supported features, please, refer to [RELEASE_NOTES.md](RELEASE_
 
 Sandvine PacketLogic Cloud packages versioning is aligned with PacketLogic products firmware lifecycle.
 
-Each branch in current repository corresponds to PacketLogic firmware version in 4 digits format. Make sure that you uploaded correct firmware version to your Cloud platform. 
-Cloud packages versions inside branch are based on git tags. For the versions available, see the [tags on this repository](https://github.com/sandvine/sandvine-nfv-descriptors/tags). 
+Each branch in current repository corresponds to PacketLogic Cloud packages version and consist of number of templates for different PacketLogic firmware version. Make sure that you uploaded correct firmware version to your Cloud platform. 
+ For the versions available, see the [tags on this repository](https://github.com/sandvine/sandvine-nfv-descriptors/tags). 
 
 Following naming conventions applies to PacketLogic Cloud packages:
 ```
@@ -74,4 +86,4 @@ See  the list of [contributors](https://github.com/sandvine/sandvine-nfv-descrip
 
 ## License
 
-This project is licensed under the Apache 2.0 License - see the [LICENSE.md](LICENSE.md) file for details
+This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENSE) file for details
