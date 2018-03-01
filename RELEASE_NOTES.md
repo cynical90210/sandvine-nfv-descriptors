@@ -33,8 +33,3 @@ Please, refer to PacketLogic Cloud deployment documentation for details.
 
 * OSM R3 templates format support
 * No EPA requirements for VIM/NFVI
-
-### Rift.ware MANO
-
-* Rift.ware 5.3 templates format support
-* No EPA requirements for VIM/NFVI

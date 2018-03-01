@@ -46,8 +46,8 @@ Currently the following packages are provided for Heat on-boarding
 
 ### Juniper Contrail Heat packages
 
-Juniper Contrail package follows same format as Openstack Heat package.
-Currently the following packages are provided for Heat on-boarding
+Juniper Contrail package is part of Openstack Heat package.
+Currently the following packages are provided for on-boarding to Contrail Cloud
 * PRE VNF package
 * PSM VNF package
 * PIC VNF package
@@ -72,13 +72,16 @@ Sandvine PacketLogic Cloud packages versioning is aligned with PacketLogic produ
 Each branch in current repository corresponds to PacketLogic Cloud packages version and consist of number of templates for different PacketLogic firmware version. Make sure that you uploaded correct firmware version to your Cloud platform. 
  For the versions available, see the [tags on this repository](https://github.com/sandvine/sandvine-nfv-descriptors/tags). 
 
-Following naming conventions applies to PacketLogic Cloud packages:
+The following directory structure represents each Sandvine Cloud packages release:
 ```
-0-18.1.1.7
+PACKAGES/0/heat/18.1.1.7
+PACKAGES/0/heat/18.1.2.0
+PACKAGES/0/osm/18.1.1.7
 ```
 Where:
-* 18.1.1.7 is PacketLogic products firmware version
-* 0- is Cloud package version
+* 18.1.1.7, 18.1.2.0 and etc. is PacketLogic products firmware version
+* 0 - is Cloud package version
+* osm, rift, heat and etc - Cloud platform name
 
 ## Authors
 
