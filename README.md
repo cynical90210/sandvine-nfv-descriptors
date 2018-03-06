@@ -74,13 +74,12 @@ Each branch in current repository corresponds to PacketLogic Cloud packages vers
 
 The following directory structure represents each Sandvine Cloud packages release:
 ```
-PACKAGES/0/heat/18.1.1.7
-PACKAGES/0/heat/18.1.2.0
-PACKAGES/0/osm/18.1.1.7
+heat/18.1.1.7
+heat/18.1.2.0
+osm/18.1.1.7
 ```
 Where:
 * 18.1.1.7, 18.1.2.0 and etc. is PacketLogic products firmware version
-* 0 - is Cloud package version
 * osm, rift, heat and etc - Cloud platform name
 
 ## Authors
