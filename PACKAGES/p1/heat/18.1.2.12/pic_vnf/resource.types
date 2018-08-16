@@ -1,0 +1,2 @@
+packetlogic::pic::vnf   pic_vnf/vnfd.yaml
+packetlogic::pic::vnfc  pic_vnf/vnfc.yaml

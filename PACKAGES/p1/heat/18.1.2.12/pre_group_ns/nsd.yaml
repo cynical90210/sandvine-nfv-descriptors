@@ -1,0 +1,117 @@
+heat_template_version: 2016-04-08
+
+
+description: >
+  A network service (NS) representing a group of PREs
+
+parameters:
+
+
+  management_provider_network:
+    type: string
+    description: Name or ID of the provider network use for management network Floating IPs.
+
+#  dns_domain:
+#    type: string
+#    description: Name of DNS domain to use for Floating IP networks.
+
+  management_network:
+    type: string
+
+  service_network:
+    type: string
+
+  qsync_network:
+    type: string
+
+  flowsync_network:
+    type: string
+
+  client_network:
+    type: string
+
+  server_network:
+    type: string
+
+  name:
+    type: string
+
+  maximum_pre_count:
+    type: number
+
+  pre_count:
+    type: number
+
+
+resources:
+
+
+#
+#  Channel Networks
+#
+
+  pre_channels:
+    type: packetlogic::channel_networks::ns
+    properties:
+      count: { get_param: maximum_pre_count }
+      set: internal
+
+
+#
+# Balancer int & ext
+#
+
+
+  balancer_int:
+    type: packetlogic::pre_group::balancer
+    properties:
+      name: balancer_int
+      balancer_ip: 192.168.80.100
+      balancer_peer_ip: 192.168.80.101
+      source_network: { get_param: client_network }
+      channel_ports:  { get_attr: [pre_channels,int_net_port] } 
+      management_provider_network: { get_param: management_provider_network }
+      management_network: { get_param: management_network }
+
+
+  balancer_ext:
+    type: packetlogic::pre_group::balancer
+    properties:
+      name: balancer_ext
+      balancer_ip: 192.168.80.101
+      balancer_peer_ip: 192.168.80.100
+      source_network: { get_param: server_network }
+      channel_ports:  { get_attr: [pre_channels,ext_net_port] } 
+      management_provider_network: { get_param: management_provider_network }
+      management_network: { get_param: management_network }
+
+
+
+#
+#  PREs
+#
+
+
+  pres:
+    type: OS::Heat::ResourceGroup
+    properties:
+      count: { get_param: pre_count }
+      resource_def: 
+        type: packetlogic::pre::vnf_indexed
+        properties:
+          index: "%index%"
+          name: { get_param: name }
+          management_network: { get_param: management_network }
+          service_network: { get_param: service_network }
+          qsync_network: { get_param: qsync_network }
+          flowsync_network: { get_param: flowsync_network }
+          int_networks: { get_attr: [pre_channels,int_net] }
+          ext_networks: { get_attr: [pre_channels,ext_net] }
+          management_provider_network: { get_param: management_provider_network }
+##          dns_domain: { get_param: dns_domain }
+          
+outputs:
+  int_networks:
+    value: { get_attr: [pre_channels,int_net] }
+  ext_networks:
+    value: { get_attr: [pre_channels,ext_net] }
