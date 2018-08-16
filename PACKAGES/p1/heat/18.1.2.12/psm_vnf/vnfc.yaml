@@ -1,0 +1,367 @@
+heat_template_version: 2016-04-08
+
+
+description: >
+  A stack with 1 vPSM VM and associated resources
+
+parameters:
+
+  index:
+    type: string
+    description: Index number of VM
+    label: VM index
+  flavor:
+    type: string
+    description: Flavor
+    label: Flavor
+  image:
+    type: string
+  management_network:
+    type: string
+  service_network:
+    type: string
+  cluster_network:
+    type: string
+  subscriber_network:
+    type: string
+  security_group:
+    type: string
+
+  volume_ids:
+    type: comma_delimited_list
+    default: ""
+
+  management_provider_network:
+    type: string
+    description: Provider network for management net
+    label: Management network provider
+
+  dns_domain:
+    type: string
+
+
+resources:
+
+
+  vm:
+    type: OS::Nova::Server
+    properties:
+      name:
+        str_replace:
+          template:
+            PSM__index__
+          params:
+            __index__:  { get_param: index }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      networks: 
+       - port: { get_resource: management_port }
+       - port: { get_resource: service_port }
+       - port: { get_resource: cluster_port }
+       - port: { get_resource: subscriber_port }
+      user_data_format: RAW
+      user_data: { get_resource: cloud_config }
+
+  management_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: management_network }
+      port_security_enabled: true
+      security_groups:
+        - { get_param: security_group }
+
+  service_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: service_network }
+      port_security_enabled: true
+      security_groups:
+        - { get_param: security_group }
+
+  cluster_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: cluster_network }
+      port_security_enabled: true
+      security_groups:
+        - { get_param: security_group }
+
+  subscriber_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: subscriber_network }
+      port_security_enabled: true
+      security_groups:
+        - { get_param: security_group }
+
+
+  fip: 
+    type: OS::Neutron::FloatingIP
+    properties: 
+      floating_network: { get_param: management_provider_network }
+###      dns_domain: { get_param: dns_domain }
+###      dns_name: 
+###        str_replace:
+###          template:
+###            psm__index__
+###          params:
+###            __index__:  { get_param: index }
+
+  fip_assign:
+    type: OS::Neutron::FloatingIPAssociation
+    properties:
+      floatingip_id: { get_resource: fip }
+      port_id: { get_resource: management_port }
+
+  volume_attachment:
+    type: OS::Cinder::VolumeAttachment
+    properties:
+      volume_id: { get_param: [volume_ids, { get_param: index } ] }
+      instance_uuid: { get_attr: [vm, show, id] }
+
+
+  cloud_config:
+    type: OS::Heat::CloudConfig
+    properties:
+      cloud_config:
+        merge_how: 'dict(recurse_array,no_replace)+list(append)'
+        bootcmd:
+          - ["set-role","psm"]
+        runcmd:
+          - ["touch", "/pl2/pl2/system-conf/psm_enabled"]
+          - echo 192.168.110.200 aux_3 > /pl2/pl2/system-conf/virtualips.conf
+          - ["mkdir", "-p", "/pl2/pl2/system-conf/koi/100"]
+          - echo 100 > /pl2/pl2/system-conf/koi/100/cluster_id
+          - echo 2 > /pl2/pl2/system-conf/koi/100/cluster_quorum
+          - echo hemligt > /pl2/pl2/system-conf/koi/100/cluster_secret
+          - echo 239.17.9.22  > /pl2/pl2/system-conf/koi/100/cluster_transport
+          - echo "239.17.9.22/32 dev aux_2" > /pl2/pl2/system-conf/staticroutes
+          - ["touch", "/pl2/pl2/system-conf/koi/100/elector"]
+          - ["touch", "/pl2/pl2/system-conf/koi/100/enabled"]
+          - echo psmnet > /pl2/pl2/system-conf/koi/100/name
+          - ["touch", "/pl2/pl2/system-conf/koi/100/runner"]
+          - ["touch", "/pl2/pl2/system-conf/koi/100/service_04-virtualip"]
+          - ["touch", "/pl2/pl2/system-conf/koi/100/service_05-psm"]
+          - ["ln","-s","/etc/service/zeroconf","/var/service"]
+          - ["/etc/init.d/koi-setup"]
+          - ["fixroutes.sh","21","aux_1"]
+          - ["fixroutes.sh","22","aux_2"]
+          - ["fixroutes.sh","23","aux_3"]
+          - ["cfg-set", "/pl2/pl2/plcommd/clientcreds/psmsync", "username", "pladmin"]
+          - ["cfg-set", "/pl2/pl2/plcommd/clientcreds/psmsync", "password", "pldemo00"]
+          - ["cfg-set", "/pl2/pl2/plcommd/clientcreds/plscd", "username", "admin"]
+          - ["cfg-set", "/pl2/pl2/plcommd/clientcreds/plscd", "password", "pldemo00"]
+          - ["get_osm_keys.sh"]
+        write_files:
+          - path: "/usr/libexec/cloud/get_osm_keys.sh"
+            permissions: "0775"
+            content: |
+              #!/bin/bash
+              keyindex=-1
+              lastexitcode=0
+              while [ $lastexitcode -eq 0 ]; do
+                keyindex=$((keyindex + 1))
+                curl -f -o /tmp/tmpkey http://169.254.169.254/latest/meta-data/public-keys/$keyindex/openssh-key
+                lastexitcode=$?
+                if [ $lastexitcode -eq 0 ]; then
+                  cat /tmp/tmpkey >> /pl2/pl2/ssh-authorized-keys/root
+                fi
+              done
+              if [ -e /pl2/pl2/ssh-authorized-keys/root ]; then
+                chmod 0600 /pl2/pl2/ssh-authorized-keys/root
+              fi
+          - path: /usr/libexec/cloud/fixroutes.sh
+            permissions: "0755"
+            owner: root
+            content: |
+              #!/bin/bash
+              TABLE=$1
+              DEVICE=$2
+              echo TABLE $TABLE >> /var/log/fixroutes-$DEVICE.log
+              echo DEVICE $DEVICE >> /var/log/fixroutes-$DEVICE.log
+              IP_CIDR=$(ip -o -f inet addr show $DEVICE |grep brd|awk '{print $4}')
+              SUFFIX=$(echo $IP_CIDR|awk -F '/' '{print $2}')
+              NETWORK=$(ipcalc -n $IP_CIDR|awk -F '=' '{print $2}')
+              echo IP_CIDR $IP_CIDR >> /var/log/fixroutes-$DEVICE.log
+              echo SUFFIX $SUFFIX >> /var/log/fixroutes-$DEVICE.log
+              echo NETWORK $NETWORK >> /var/log/fixroutes-$DEVICE.log
+              CIDR="$NETWORK/$SUFFIX"
+              echo CIDR $CIDR >> /var/log/fixroutes-$DEVICE.log
+              # This assumes that GW address is network address with .0 replaced by .1
+              GATEWAY="$(echo $NETWORK|sed s'/.$//')1"
+              echo GATEWAY $GATEWAY >> /var/log/fixroutes-$DEVICE.log
+              ip route add default via $GATEWAY table $TABLE
+              ip route add $CIDR dev $DEVICE table $TABLE
+              ip rule add from $CIDR table $TABLE
+              ip route flush cache
+              exit 0
+          - path: "/pl2/pl2/system-conf/if_aux_1_interface"
+            permissions: "0664"
+            owner: root
+            content: |
+              eth1
+          - path: "/pl2/pl2/system-conf/if_aux_2_interface"
+            permissions: "0664"
+            owner: root
+            content: |
+              eth2
+          - path: "/pl2/pl2/system-conf/if_aux_3_interface"
+            permissions: "0664"
+            owner: root
+            content: |
+              eth3
+          - path: "/usr/libexec/cloud/lmregister.sh"
+            permissions: "0775"
+            content: |
+              #!/bin/bash
+              echo Starting >> /var/log/lmregister.log
+              lmhost=$1
+              ipaddr=$2
+              pool=PSM
+              name=$(hostname)
+              data=$(echo "{\"name\":\"${name}\",\"ip\":\"${ipaddr}\",\"ssh_port\":42002,\"license-pool\":\"${pool}\"}")
+              echo $data >> /var/log/lmregister.log 2>&1
+              echo Found License manager !!!
+              curl -X DELETE http://admin:pldemo00@${lmhost}:8092/api/systems/$name >> /var/log/lmregister.log 2>&1 
+              system=$(curl http://admin:pldemo00@${lmhost}:8092/api/systems |gzip -d - |sed 's/name/\'$'\n/g' |grep $ipaddr |awk -F"[\"]" '{print $3}')
+              if [ "$system" != "" ];then
+                curl -X DELETE http://admin:pldemo00@${lmhost}:8092/api/systems/$system >> /var/log/lmregister.log 2>&1 
+              fi
+              while ! curl -H "Content-Type: application/json" -X POST -d $data http://admin:pldemo00@${lmhost}:8092/api/systems >> /var/log/lmregister.log 2>&1
+              do
+                sleep 30
+              done
+          - path: "/etc/service/zeroconf/run"
+            permissions: "0775"
+            content: |
+              #!/usr/bin/env python
+              from zeroconf import Zeroconf, ServiceInfo, ServiceBrowser
+              import socket
+              import logging
+              import safelogging
+              import subprocess
+              import time
+              import netifaces
+              import os
+              import json
+              LOG=logging.getLogger()
+              me=subprocess.check_output(['hostname']).rstrip('\n')
+              backlog=[]
+        
+              def clear_backlog():
+                   while len(backlog) > 0:
+                       servicename,serviceaddr=backlog.pop()
+                       LOG.info("Clear backlog "+servicename)
+                       handle(servicename,serviceaddr)
+        
+              def handle(servicename,serviceaddr):
+                  LOG.info(servicename+': '+serviceaddr)
+                  servicetype=servicename.split('.')[1]
+                  if servicetype=='PSM':
+                      # PSM seeing another PSM adds it as redundancy peer.
+                      my_addr = netifaces.ifaddresses('aux_1')[netifaces.AF_INET][0]['addr']
+                      if not servicename.split('.')[0] == my_addr.split('.')[-1]:
+                          LOG.info("Peer, adding redundancy sync config")
+                          changed=False
+                          LOG.info("Trying psm-config")
+                          psmconfout=""
+                          while not psmconfout:
+                              psmconfout=subprocess.check_output('psm-config;exit 0',shell=True)
+                              time.sleep(10)
+                          conf=json.loads(psmconfout)
+                          for comp in conf['components']:
+                              if comp['componentId']=='psm.model.syncer.client':
+                                  syncnodes=[]
+                                  for node in comp['config']['nodes']:
+                                      syncnodes.append(node['hostName'])
+                                  if serviceaddr not in syncnodes:
+                                      changed=True
+                                      syncclientnode={'useDirectConnection':True,'hostName':serviceaddr}
+                                      comp['config']['nodes'].append(syncclientnode)
+                              if comp['componentId']=='psm.model.syncer.server':
+                                  listeners=[]
+                                  for listener in comp['config']['directListeners']:
+                                      listeners.append(listener['listenHost'])
+                                  if myaddr not in listeners:
+                                      changed=True
+                                      syncserverlistener={'listenHost':my_addr}
+                                      comp['config']['directListeners'].append(syncserverlistener)
+                          if changed:
+                              json.dump(conf,open('zeroconf.json','w'))
+                              res=subprocess.call(['psm-config','zeroconf.json'])
+                              LOG.info("Committed config with exit code"+str(res))
+                          changed=False
+                          syncnodes=[]
+                          listeners=[]
+                  elif servicetype=='PRE':
+                      # PSM seeing a PRE adds it to be provisioned.
+                      psmconfout=""
+                      while not psmconfout:
+                          psmconfout=subprocess.check_output('psm-config;exit 0',shell=True)
+                          time.sleep(10)
+                      conf=json.loads(psmconfout)
+                      provnodes=[]
+                      for comp in conf['components']:
+                          if comp['componentId']=='psm.provisionerng.host':
+                              provnodes.append(comp['config']['hostName'])
+                          if serviceaddr not in provnodes:
+                              provnode={'componentId':'psm.provisionerng.host','instanceId':None,'version':4,'config':{'group':'','serviceOrPort':'','startupState':'enabled','hostName':serviceaddr,'useDirectConnection':False}}
+                              conf['components'].append(provnode)
+                              json.dump(conf,open('zeroconf.json','w'))
+                              res=subprocess.call(['psm-config','zeroconf.json'])
+                              LOG.info("Committed config with exit code "+str(res))
+                  elif servicetype=='PIC':
+                      pass
+                      # PSM takes no action on PIC discovery.
+                  else:
+                      LOG.info("No handler for "+servicename)
+          
+              class Listener(object):
+                  def add_service(self, zeroconf, type, name):
+                      licensed = os.path.exists("/pl2/pl2/system-conf/packetlogicd.lic")
+                      my_addr = netifaces.ifaddresses('aux_1')[netifaces.AF_INET][0]['addr']
+                      info = zeroconf.get_service_info(type,name)
+                      discovered_addr = socket.inet_ntoa(info.address)
+                      if name.split('.')[0] == "LM":
+                          LOG.info("LM: "+name+': '+discovered_addr)
+                          LOG.info("Trying to register with LM..")
+                          line="/usr/libexec/cloud/lmregister.sh "+discovered_addr+" "+my_addr+";exit 0"
+                          subprocess.check_output(line,shell=True)
+                          while not os.path.exists("/pl2/pl2/system-conf/packetlogicd.lic"):
+                              time.sleep(10)
+                          LOG.info("Detected license file, clearing backlog")
+                          clear_backlog()
+                      else:
+                          if licensed:
+                              LOG.info("licensed, processing "+name+" immediately")
+                              handle(name,discovered_addr)
+                          else:
+                              LOG.info("not licensed, backlogging "+name)
+                              backlog.append((name,discovered_addr))
+                  def remove_service(self):
+                      LOG.info("Service removed")
+        
+        
+              def setup_logging():
+                  handler = safelogging.ResilientSysLogHandler("/dev/log", "local2")
+                  format = ("zeroconf: %(message)s")
+                  handler.setFormatter(logging.Formatter(format))
+                  root = logging.getLogger()
+                  root.addHandler(handler)
+                  root.setLevel(logging.DEBUG)
+              if __name__ == '__main__':
+                  while [i['addr'] for i in netifaces.ifaddresses('aux_1')[netifaces.AF_INET]]==[]:
+                      time.sleep(10)
+                  myaddr=[i['addr'] for i in netifaces.ifaddresses('aux_1')[netifaces.AF_INET]]
+                  serviceindex=myaddr[0].split('.')[-1]
+                  setup_logging()
+                  r = Zeroconf(interfaces=myaddr)
+                  desc = {}
+                  info = ServiceInfo("_http._tcp.local.", serviceindex+".PSM._http._tcp.local.", socket.inet_aton(myaddr[0]), 1234, 0, 0, desc)
+                  LOG.info("Registering service PSM, index "+serviceindex+", "+myaddr[0])
+                  r.register_service(info)
+                  listener = Listener()
+                  LOG.info("Starting service browser")
+                  browser = ServiceBrowser(r, "_http._tcp.local.", listener=listener)
+                  while True:
+                      time.sleep(1)

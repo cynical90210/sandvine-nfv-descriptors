@@ -1,0 +1,147 @@
+heat_template_version: 2016-04-08
+
+description: >
+     Balancer VM
+
+parameters:
+
+  management_network:
+    type: string
+
+  management_provider_network:
+    type: string
+
+#  dns_domain:
+#    type: string
+
+  channel_ports:
+    type: comma_delimited_list
+    description: List of network ports that represents the channel networks
+
+  source_network:
+    type: string
+    description: Network to/from which traffic is routed
+
+
+  balancer_ip:
+    type: string
+    description: Balancer IP address
+
+  balancer_peer_ip:
+    type: string
+    description: Balancer peer IP address
+
+
+  name:
+    type: string
+
+
+
+resources:
+
+  management_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: management_network }
+      port_security_enabled: false
+
+
+  fip: 
+    type: OS::Neutron::FloatingIP
+    properties: 
+      floating_network: { get_param: management_provider_network }
+###      dns_domain: { get_param: dns_domain }
+###      dns_name: { get_param: name }
+
+  fip_assign:
+    type: OS::Neutron::FloatingIPAssociation
+    properties:
+      floatingip_id: { get_resource: fip }
+      port_id: { get_resource: management_port }
+
+
+  source_network_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: source_network}
+      port_security_enabled: False 
+
+
+  server:
+    type: OS::Nova::Server
+    properties:
+      name: { get_param: name }
+      image: PLOS_VIRTIO_CLOUD
+      flavor: PRE-FLAVOR
+      user_data: { get_resource: user_data }
+      user_data_format: RAW
+      networks:
+        repeat:
+          template:
+            port : <%port%>
+          for_each:
+            <%port%> :
+              str_split:
+                - ','
+                -  str_replace:
+                     template: 
+                        __content__
+                     params:
+                        __content__: { list_join: [',',{str_split: [',',{ list_join: [',',{str_split: [',',{get_resource: management_port}]},{str_split: [',',{get_resource: source_network_port}]}, {get_param: channel_ports}] } ] } ] }
+
+
+  user_data:
+    type: OS::Heat::CloudConfig
+    properties:
+      cloud_config:
+        merge_how: 'dict(recurse_array,no_replace)+list(append)'
+#        bootcmd:
+#          - sed  -i '/\/sbin\/ifconfig/a [ "$interface" != "admin" ] && exit 0' /etc/udhcpc/udhcpc.bound 
+#          - sed  -i '/\/sbin\/ifconfig/a [ "$interface" != "admin" ] && exit 0' /etc/udhcpc/udhcpc.renew 
+        runcmd:
+#          - ["ip","route","del", "default", "via", { get_param: backbone_gw },"dev","admin"]
+#          - ["ip","route","add", "default", "via", { get_param: backbone_gw },"table","51"]
+#          - ["ip","route","add", { get_param: backbone_cidr },"dev","admin",table","51"]
+#          - ["ip","rule","add", "from", { get_param: backbone_cidr },"table","51"]
+#          - ["ip","route","flush", "cache"]
+#          - ["udhcpc","-b","-t","10","-i","eth1","&"]
+          - ["/usr/libexec/bondchannels"]
+          - ["ifconfig","channels",{ get_param: balancer_ip },"mtu","1450"]
+          - ["ip","route","add", "default", "via", { get_param: balancer_peer_ip }]
+          - ["sysctl", "-w", "net.ipv4.ip_forward=1"]
+        write_files:
+          - path: "/usr/libexec/bondchannels"
+            permissions: "0775"
+            content: 
+              str_replace:
+                template: |
+                  #!/bin/bash
+                  echo +channels > /sys/class/net/bonding_masters
+                  ifconfig channels down
+                  echo balance-xor > /sys/class/net/channels/bonding/mode
+                  echo layer3+4 > /sys/class/net/channels/bonding/xmit_hash_policy 
+                  ifconfig channels up
+                  num=2
+                  for chan in __channels__
+                  do
+                    echo +eth${num} > /sys/class/net/channels/bonding/slaves
+                    num=$((num+1))
+                  done
+                  exit 0
+                params:
+                  __dummy__: dummy
+                  __channels__: 
+                    list_join:
+                      - ' '
+                      - get_param: channel_ports
+
+
+
+
+outputs:
+  channel_ports:
+    value: { get_param: channel_ports }
+  server:
+    value: { get_attr: [server,show,id] }
+  entrance_ip:
+    value: { get_attr: [source_network_port, fixed_ips, 0, ip_address] }

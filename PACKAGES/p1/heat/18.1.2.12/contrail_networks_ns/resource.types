@@ -1,0 +1,2 @@
+packetlogic::contrail_networks::channel    contrail_networks_ns/contrail_channel.yaml
+packetlogic::contrail_networks::ns         contrail_networks_ns/nsd.yaml

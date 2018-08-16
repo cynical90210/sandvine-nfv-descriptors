@@ -1,0 +1,2 @@
+packetlogic::psm::vnf   psm_vnf/vnfd.yaml
+packetlogic::psm::vnfc  psm_vnf/vnfc.yaml
