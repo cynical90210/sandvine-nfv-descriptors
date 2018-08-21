@@ -64,13 +64,12 @@ Detailed deployment process for each Cloud platform in scope described in offici
 
 Sandvine supplies PacketLogic products images for Cloud in QCOW2 and VMDK format. Please contact your Sandvine Sales representative to get PacketLogic products images.
 
-For the list of supported features, please, refer to [RELEASE_NOTES.md](RELEASE_NOTES.md)
 
 ## Versioning
 
 Sandvine PacketLogic Cloud packages versioning is aligned with PacketLogic products firmware lifecycle.
 
-Release .zip archive in current repository corresponds to PacketLogic Cloud packages version and consist of number of templates for different PacketLogic firmware version. Make sure that you uploaded correct firmware version to your Cloud platform. 
+Release .zip archive in current repository consist of number of templates for different PacketLogic firmware version. Make sure that you uploaded correct firmware version to your Cloud platform. 
  For the versions available, see the [tags on this repository](https://github.com/sandvine/sandvine-nfv-descriptors/tags). 
 
 The following directory structure represents each Sandvine Cloud packages release:
