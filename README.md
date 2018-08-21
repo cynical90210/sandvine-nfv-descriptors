@@ -5,6 +5,7 @@ Sandvine provides reference templates for cloud platforms, including OSM, Openst
 ## Before you start
 
 Please read Sandvine PacketLogic Cloud architecture documentation before proceeding to deployment in Cloud platform.
+https://docs.support.sandvine.com/doc/packetlogic/18-1-0/cloud-deployment-guide/1/pl_cloud_deployment_guide_docportal 
 
 ## Platforms in scope
 
@@ -69,7 +70,7 @@ For the list of supported features, please, refer to [RELEASE_NOTES.md](RELEASE_
 
 Sandvine PacketLogic Cloud packages versioning is aligned with PacketLogic products firmware lifecycle.
 
-Each branch in current repository corresponds to PacketLogic Cloud packages version and consist of number of templates for different PacketLogic firmware version. Make sure that you uploaded correct firmware version to your Cloud platform. 
+Release .zip archive in current repository corresponds to PacketLogic Cloud packages version and consist of number of templates for different PacketLogic firmware version. Make sure that you uploaded correct firmware version to your Cloud platform. 
  For the versions available, see the [tags on this repository](https://github.com/sandvine/sandvine-nfv-descriptors/tags). 
 
 The following directory structure represents each Sandvine Cloud packages release:
