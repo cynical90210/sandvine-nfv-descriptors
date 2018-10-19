@@ -1,0 +1,104 @@
+heat_template_version: 2016-04-08
+
+
+description: >
+  A network service (NS) with the FRIGG VNF as data plane service
+
+parameters:
+
+  management_provider_network:
+    type: string
+    description: Name of the provider network use for management network Floating IPs.
+
+  controlplane_subscriber_network:
+    type: string
+    description: Name of the network used for passing subscriber info to PSM 
+
+  dataplane_int_network:
+    type: string
+    description: Name of the network used as dataplane INT 
+
+  dataplane_ext_network:
+    type: string
+    description: Name of the network used as dataplane EXT 
+
+  data_image:
+    type: string
+    description: Name of image that holds initial system data.
+
+  key_name:
+    type: string
+    description: Name of key for admin
+
+
+resources:
+
+#
+#  General Networks
+#
+
+  networks:
+    type: packetlogic::internal_networks::ns
+    properties:
+      management_provider_network: { get_param: management_provider_network }
+      ns_instance_name: { get_param: "OS::stack_name" }
+
+
+#
+#  General VNFs
+#
+
+  sysmgr_vnf:
+    type: packetlogic::sysmgr::vnf
+    properties:
+      management_network: { get_attr: [networks,management_net] }
+      management_provider_network: { get_param: management_provider_network }
+      service_network: { get_attr: [networks,service_net] }
+      data_image:  { get_param: data_image }
+      ns_instance_name: {get_param: "OS::stack_name"}
+      ns_vnf_instance_name: sysmgr_1
+      key_name: { get_param: key_name }
+      scaling:
+        - { get_attr: [frigg_vnf, scalingdata] }
+
+
+  psm_vnf:
+    type: packetlogic::psm::vnf
+    properties:
+      management_network: { get_attr: [networks,management_net] }
+      service_network: { get_attr: [networks,service_net] }
+      subscriber_network: { get_param: controlplane_subscriber_network }
+      management_provider_network: { get_param: management_provider_network }
+      ns_vnf_instance_name: psm_1
+      ns_instance_name: {get_param: "OS::stack_name"}
+
+  pic_vnf:
+    type: packetlogic::pic::vnf
+    properties:
+      management_network: { get_attr: [networks,management_net] }
+      service_network: { get_attr: [networks,service_net] }
+      management_provider_network: { get_param: management_provider_network }
+      ns_vnf_instance_name: pic_1
+      ns_instance_name: {get_param: "OS::stack_name"}
+
+
+
+#
+#  PRE cluster VNF
+#
+
+
+  frigg_vnf:
+    type: packetlogic::frigg::vnf
+    properties:
+      management_network: { get_attr: [networks,management_net] }
+      service_network: { get_attr: [networks,service_net] }
+      qsync_network: { get_attr: [networks,qsync_net] }
+      flowsync_network: { get_attr: [networks,flowsync_net] }
+      management_provider_network: { get_param: management_provider_network }
+      int_network: { get_param: dataplane_int_network }
+      ext_network: { get_param: dataplane_ext_network }
+      ns_instance_name: {get_param: "OS::stack_name"}
+      ns_vnf_instance_name: frigg_1
+      key_name: { get_param: key_name }
+      desired_count: 4

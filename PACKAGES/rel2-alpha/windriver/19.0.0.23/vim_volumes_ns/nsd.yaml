@@ -1,0 +1,65 @@
+heat_template_version: 2016-04-08
+
+description: >
+  Volumes for PICs and PSMs
+  
+resources:
+
+
+  pic0_volume:
+    type: OS::Cinder::Volume
+    properties:
+      description: Volume for PIC0
+      name: pic0
+      size: 10
+
+  pic1_volume:
+    type: OS::Cinder::Volume
+    properties:
+      description: Volume for PIC1
+      name: pic1
+      size: 10
+
+  pic2_volume:
+    type: OS::Cinder::Volume
+    properties:
+      description: Volume for PIC2
+      name: pic2
+      size: 10
+
+  psm0_volume:
+    type: OS::Cinder::Volume
+    properties:
+      description: Volume for PSM0
+      name: psm0
+      size: 10
+
+  psm1_volume:
+    type: OS::Cinder::Volume
+    properties:
+      description: Volume for PSM1
+      name: psm1
+      size: 10
+
+
+outputs:
+
+  pic_volumes:
+    value:
+      list_join:
+        - ','
+        - 
+          - get_attr: [pic0_volume,show,id]
+          - get_attr: [pic1_volume,show,id]
+          - get_attr: [pic2_volume,show,id]
+    
+
+  psm_volumes:
+    value:
+      list_join:
+        - ','
+        - 
+          - get_attr: [psm0_volume,show,id]
+          - get_attr: [psm1_volume,show,id]
+
+

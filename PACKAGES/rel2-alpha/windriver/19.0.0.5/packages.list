@@ -1,0 +1,15 @@
+REPOSITORY_URL_PREFIX/rel2-alpha/heat/19.0.0.5/frigg_vnf-rel2-alpha-19.0.0.5.tar.gz
+REPOSITORY_URL_PREFIX/rel2-alpha/heat/19.0.0.5/pic_vnf-rel2-alpha-19.0.0.5.tar.gz
+REPOSITORY_URL_PREFIX/rel2-alpha/heat/19.0.0.5/psm_vnf-rel2-alpha-19.0.0.5.tar.gz
+REPOSITORY_URL_PREFIX/rel2-alpha/heat/19.0.0.5/single_pre_vnf-rel2-alpha-19.0.0.5.tar.gz
+REPOSITORY_URL_PREFIX/rel2-alpha/heat/19.0.0.5/sysmgr_vnf-rel2-alpha-19.0.0.5.tar.gz
+REPOSITORY_URL_PREFIX/rel2-alpha/heat/19.0.0.5/channel_networks_ns-rel2-alpha-19.0.0.5.tar.gz
+REPOSITORY_URL_PREFIX/rel2-alpha/heat/19.0.0.5/contrail_networks_ns-rel2-alpha-19.0.0.5.tar.gz
+REPOSITORY_URL_PREFIX/rel2-alpha/heat/19.0.0.5/environment_ns-rel2-alpha-19.0.0.5.tar.gz
+REPOSITORY_URL_PREFIX/rel2-alpha/heat/19.0.0.5/frigg_example_ns-rel2-alpha-19.0.0.5.tar.gz
+REPOSITORY_URL_PREFIX/rel2-alpha/heat/19.0.0.5/frigg_ns-rel2-alpha-19.0.0.5.tar.gz
+REPOSITORY_URL_PREFIX/rel2-alpha/heat/19.0.0.5/internal_networks_ns-rel2-alpha-19.0.0.5.tar.gz
+REPOSITORY_URL_PREFIX/rel2-alpha/heat/19.0.0.5/single_pre_example_ns-rel2-alpha-19.0.0.5.tar.gz
+REPOSITORY_URL_PREFIX/rel2-alpha/heat/19.0.0.5/single_pre_ns-rel2-alpha-19.0.0.5.tar.gz
+REPOSITORY_URL_PREFIX/rel2-alpha/heat/19.0.0.5/standard_networks_ns-rel2-alpha-19.0.0.5.tar.gz
+REPOSITORY_URL_PREFIX/rel2-alpha/heat/19.0.0.5/vim_volumes_ns-rel2-alpha-19.0.0.5.tar.gz

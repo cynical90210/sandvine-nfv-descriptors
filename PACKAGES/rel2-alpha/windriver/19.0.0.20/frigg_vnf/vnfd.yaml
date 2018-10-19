@@ -1,0 +1,602 @@
+heat_template_version: 2016-04-08
+
+
+description: >
+  A  FRIGG VNF 
+
+parameters:
+
+  management_network:
+    type: string
+
+  service_network:
+    type: string
+
+  qsync_network:
+    type: string
+
+  flowsync_network:
+    type: string
+
+
+  name:
+    type: string
+    default: pre
+
+  flavor:
+    type: string
+    default: PRE-FLAVOR
+
+  desired_count:
+    type: number
+    default: 1
+
+  management_provider_network:
+    type: string
+
+  int_network:
+    type: string
+
+  ext_network:
+    type: string
+
+
+  scale_out_cooldown:
+    type: number
+    default: 150
+
+  scale_in_cooldown:
+    type: number
+    default: 300
+
+  scale_out_threshold:
+    type: number
+    default: 50
+
+  scale_in_threshold:
+    type: number
+    default: 20
+
+  ns_instance_name:
+    type: string
+    description: Name of embracing NS instance. Used in composing key for elements data mapping.
+
+  ns_vnf_instance_name:
+    type: string
+    description: Name of this VNF instance within embracing NS instance. Used in composing key for elements data mapping.
+
+  key_name:
+    type: string
+    description: Name of key for admin
+
+
+
+resources:
+
+
+
+  pre_scale_in:
+    type: OS::Heat::ScalingPolicy
+    properties:
+      adjustment_type: change_in_capacity
+      auto_scaling_group_id: { get_resource: servers }
+      cooldown: {get_param: scale_in_cooldown}
+      scaling_adjustment: -1
+
+  pre_scale_out:
+    type: OS::Heat::ScalingPolicy
+    properties:
+      adjustment_type: change_in_capacity
+      auto_scaling_group_id: { get_resource: servers }
+      cooldown: {get_param: scale_out_cooldown}
+      scaling_adjustment: 1
+
+
+  servers:
+    type: OS::Heat::AutoScalingGroup
+    properties:
+      min_size: 1
+      max_size: 4
+      desired_capacity: { get_param: desired_count }
+      resource: 
+        type: OS::Heat::Stack
+        properties:
+          parameters:
+            index: "%index%"
+            name: { get_param: name }
+            flavor: { get_param: flavor }
+            image: PRE-CLOUD-19.0.0.20
+            management_network: { get_param: management_network }
+            service_network: { get_param: service_network }
+            flowsync_network: { get_param: flowsync_network }
+            qsync_network: { get_param: qsync_network }
+            int_1_channel_network: { get_resource: int_1_channel_net }
+            ext_1_channel_network: { get_resource: ext_1_channel_net }
+            int_2_channel_network: { get_resource: int_2_channel_net }
+            ext_2_channel_network: { get_resource: ext_2_channel_net }
+            int_3_channel_network: { get_resource: int_3_channel_net }
+            ext_3_channel_network: { get_resource: ext_3_channel_net }
+            int_4_channel_network: { get_resource: int_4_channel_net }
+            ext_4_channel_network: { get_resource: ext_4_channel_net }
+            management_provider_network: { get_param: management_provider_network }
+            security_group: { get_resource: security_group }
+            vnf_instance_id: { get_param: "OS::stack_id" }
+            ns_instance_name: {get_param: ns_instance_name}
+            ns_vnf_instance_name: {get_param: ns_vnf_instance_name}
+          template: |
+              heat_template_version: 2016-04-08
+              #
+              description: >
+                A stack with 1 vPRE VM and associated resources
+              #
+              parameters:
+              #
+                index:
+                  type: string
+                  description: Index number of VM
+                  label: VM index
+                name:
+                  type: string
+                flavor:
+                  type: string
+                image:
+                  type: string
+                management_network:
+                  type: string
+                service_network:
+                  type: string
+                qsync_network:
+                  type: string
+                flowsync_network:
+                  type: string
+                security_group:
+                  type: string
+                management_provider_network:
+                  type: string
+                int_1_channel_network:
+                  type: string
+                int_2_channel_network:
+                  type: string
+                int_3_channel_network:
+                  type: string
+                int_4_channel_network:
+                  type: string
+                ext_1_channel_network:
+                  type: string
+                ext_2_channel_network:
+                  type: string
+                ext_3_channel_network:
+                  type: string
+                ext_4_channel_network:
+                  type: string
+                vnfc_name:
+                  type: string
+                  default: pre
+                vnf_instance_id:
+                  type: string
+                ns_instance_name:
+                  type: string
+                  description: Name of embracing NS instance. Used in composing key for elements data mapping.
+                ns_vnf_instance_name:
+                  type: string
+                  description: Name of this VNF instance within embracing NS instance. Used in composing key for elements data mapping.
+              #
+              outputs:
+                server_id:
+                  value: {get_attr: [server,show,id]}
+              #
+              resources:
+              #
+                server:
+                  type: OS::Nova::Server
+                  properties:
+                    image: { get_param: image }
+                    flavor: { get_param: flavor }
+                    user_data: { get_resource: cloud_config }
+                    user_data_format: RAW
+                    networks:
+                      - port : { get_resource: management_port }
+                      - port : { get_resource: service_port }
+                      - port : { get_resource: qsync_port }
+                      - port : { get_resource: flowsync_port }
+                      - port : { get_resource: monitor_port }
+                      - network : { get_param: int_1_channel_network }
+                      - network : { get_param: ext_1_channel_network }
+                      - network : { get_param: int_2_channel_network }
+                      - network : { get_param: ext_2_channel_network }
+                      - network : { get_param: int_3_channel_network }
+                      - network : { get_param: ext_3_channel_network }
+                      - network : { get_param: int_4_channel_network }
+                      - network : { get_param: ext_4_channel_network }
+              #
+                management_port:
+                  type: OS::Neutron::Port
+                  properties:
+                    network: { get_param: management_network }
+                    port_security_enabled: true
+                    security_groups:
+                      - { get_param: security_group }
+              #
+                service_port:
+                  type: OS::Neutron::Port
+                  properties:
+                    network: { get_param: service_network }
+                    port_security_enabled: true
+                    security_groups:
+                      - { get_param: security_group }
+              #
+                qsync_port:
+                  type: OS::Neutron::Port
+                  properties:
+                    network: { get_param: qsync_network }
+                    port_security_enabled: false
+              #
+                monitor_port:
+                  type: OS::Neutron::Port
+                  properties:
+                    network: { get_param: flowsync_network }
+                    port_security_enabled: false
+              #
+                flowsync_port:
+                  type: OS::Neutron::Port
+                  properties:
+                    network: { get_param: flowsync_network }
+                    port_security_enabled: false
+              #
+                fip: 
+                  type: OS::Neutron::FloatingIP
+                  properties: 
+                    floating_network: { get_param: management_provider_network }
+              #
+                fip_assign:
+                  type: OS::Neutron::FloatingIPAssociation
+                  properties:
+                    floatingip_id: { get_resource: fip }
+                    port_id: { get_resource: management_port }
+              #
+                cloud_config:
+                  type: OS::Heat::CloudConfig
+                  properties:
+                    cloud_config:
+                      merge_how: 'dict(recurse_array,no_replace)+list(append)'
+                      bootcmd:
+                        - ["set-aux-interfaces-qty", "2"]
+                      runcmd:
+                        - ["get_osm_keys.sh"]
+                        - ["/pl2/octo/addon.sh"]
+                      write_files:
+                        - path: "/run/config/vnf/vnf_instance_id"
+                          content:
+                            str_replace:
+                              template: |
+                                __value__
+                              params:
+                                __value__ : {get_param: vnf_instance_id}
+                        - path: "/run/config/vnf/ns_instance_name"
+                          content:
+                            str_replace:
+                              template: |
+                                __value__
+                              params:
+                                __value__ : {get_param: ns_instance_name}
+                        - path: "/run/config/vnf/ns_vnf_instance_name"
+                          content:
+                            str_replace:
+                              template: |
+                                __value__
+                              params:
+                                __value__ : {get_param: ns_vnf_instance_name}
+                        - path: "/run/config/vnf/vnfc_name"
+                          content:
+                            str_replace:
+                              template: |
+                                __value__
+                              params:
+                                __value__ : {get_param: vnfc_name}
+                        - path: "/run/config/consul/interface"
+                          content: |
+                            aux_1
+                        - path: "/run/config/consul/security"
+                          content: |
+                            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
+                        - path: "/usr/libexec/cloud/config_local_stats"
+                          permissions: "0775"
+                          content: |
+                            #!/bin/bash
+                            source /etc/SYSTEM
+                            source /etc/functions
+                            touch $PLSYSPATH/local_statistics
+                            cat >$PLSYSPATH/plsd.hosts.LOCAL <<-EOF
+                                 pldhost 127.0.0.1
+                                 plduser packetlogicd
+                                 pldpassword secret2
+                            EOF
+                            init_d_run statistics
+                            commitlog "Local statistics enabled (with pldb/pls restart)"
+                            init_d_run config_remote_plsd
+                            pl2_sql -c "update config set value='1' where name='INSIGHTS_TRAFFIC_ENABLED';"
+                            pl2_sql -c "update config set value='1' where name='INSIGHTS_USE_SESSION_CONTEXT';"
+                            pl2_sql -c "update config set value='session' where name='INSIGHTS_SESSION_CONTEXT_SCHEMAS';"
+                            pl2_sql -c "update config set value='subId' where name='INSIGHTS_DIMENSIONS_SUBSCRIBER';"
+                            pl2_sql -c "insert into statisticsrules (name,insights_traffic,comments) values ('Insights','t','Cloud-init');"
+                            sv restart plsd
+                            sv restart pldbd
+                            sv restart plosloader
+                        - path: "/usr/libexec/cloud/get_osm_keys.sh"
+                          permissions: "0775"
+                          content: |
+                            #!/bin/bash
+                            keyindex=-1
+                            lastexitcode=0
+                            while [ $lastexitcode -eq 0 ]; do
+                              keyindex=$((keyindex + 1))
+                              curl -f -o /tmp/tmpkey http://169.254.169.254/latest/meta-data/public-keys/$keyindex/openssh-key
+                              lastexitcode=$?
+                              if [ $lastexitcode -eq 0 ]; then
+                                cat /tmp/tmpkey >> /pl2/pl2/ssh-authorized-keys/root
+                              fi
+                            done
+                            if [ -e /pl2/pl2/ssh-authorized-keys/root ]; then
+                              chmod 0600 /pl2/pl2/ssh-authorized-keys/root
+                            fi
+                        - path: "/pl2/pl2/system-conf/if_aux_1_interface"
+                          permissions: "0664"
+                          owner: root
+                          content: |
+                            eth1
+                        - path: "/pl2/pl2/system-conf/if_aux_2_interface"
+                          permissions: "0664"
+                          owner: root
+                          content: |
+                            eth2
+
+
+
+
+
+
+  int_1_channel_net:
+    type: OS::Neutron::Net
+    properties:
+      port_security_enabled: false
+      name: chan_1_int
+
+  int_1_channel_subnet:    
+    type: OS::Neutron::Subnet
+    properties:
+      network_id: { get_resource: int_1_channel_net }
+      cidr: 192.168.70.0/24
+
+  ext_1_channel_net:
+    type: OS::Neutron::Net
+    properties:
+      port_security_enabled: false
+      name: chan_1_ext
+
+  ext_1_channel_subnet:    
+    type: OS::Neutron::Subnet
+    properties:
+      network_id: { get_resource: ext_1_channel_net }
+      cidr: 192.168.70.0/24
+
+  int_2_channel_net:
+    type: OS::Neutron::Net
+    properties:
+      port_security_enabled: false
+      name: chan_2_int
+
+  int_2_channel_subnet:    
+    type: OS::Neutron::Subnet
+    properties:
+      network_id: { get_resource: int_2_channel_net }
+      cidr: 192.168.70.0/24
+
+  ext_2_channel_net:
+    type: OS::Neutron::Net
+    properties:
+      port_security_enabled: false
+      name: chan_2_ext
+
+  ext_2_channel_subnet:    
+    type: OS::Neutron::Subnet
+    properties:
+      network_id: { get_resource: ext_2_channel_net }
+      cidr: 192.168.70.0/24
+
+  int_3_channel_net:
+    type: OS::Neutron::Net
+    properties:
+      port_security_enabled: false
+      name: chan_3_int
+
+  int_3_channel_subnet:    
+    type: OS::Neutron::Subnet
+    properties:
+      network_id: { get_resource: int_3_channel_net }
+      cidr: 192.168.70.0/24
+
+  ext_3_channel_net:
+    type: OS::Neutron::Net
+    properties:
+      port_security_enabled: false
+      name: chan_3_ext
+
+  ext_3_channel_subnet:    
+    type: OS::Neutron::Subnet
+    properties:
+      network_id: { get_resource: ext_3_channel_net }
+      cidr: 192.168.70.0/24
+
+  int_4_channel_net:
+    type: OS::Neutron::Net
+    properties:
+      port_security_enabled: false
+      name: chan_4_int
+
+  int_4_channel_subnet:    
+    type: OS::Neutron::Subnet
+    properties:
+      network_id: { get_resource: int_4_channel_net }
+      cidr: 192.168.70.0/24
+
+  ext_4_channel_net:
+    type: OS::Neutron::Net
+    properties:
+      port_security_enabled: false
+      name: chan_4_ext
+
+  ext_4_channel_subnet:    
+    type: OS::Neutron::Subnet
+    properties:
+      network_id: { get_resource: ext_4_channel_net }
+      cidr: 192.168.70.0/24
+
+
+
+  security_group:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      name: pre-security-group
+      rules:
+        - protocol: icmp
+        - protocol: tcp
+          port_range_min: 1
+          port_range_max: 65535
+        - protocol: udp
+          port_range_min: 1
+          port_range_max: 65535
+
+
+
+  monitor_management_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: management_network }
+      port_security_enabled: true
+      security_groups:
+        - { get_resource: security_group }
+
+  monitor_service_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: service_network }
+      port_security_enabled: true
+      security_groups:
+        - { get_resource: security_group }
+
+  monitor_fip: 
+    type: OS::Neutron::FloatingIP
+    properties: 
+      floating_network: { get_param: management_provider_network }
+
+  monitor_fip_assign:
+    type: OS::Neutron::FloatingIPAssociation
+    properties:
+      floatingip_id: { get_resource: monitor_fip }
+      port_id: { get_resource: monitor_management_port }
+
+
+
+  management_port_int:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: management_provider_network }
+
+  management_port_ext:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: management_provider_network }
+
+
+  heimdall_int:
+    type: OS::Nova::Server
+    properties:
+      name: Heimdall INT
+      image: HEIMDALL-CLOUD-19.0.0.20
+      flavor: HEIMDALL-FLAVOR
+      key_name: { get_param: key_name }
+      networks:
+        - port: { get_resource: management_port_int }
+        - network: { get_param: int_network }
+        - network: { get_resource: int_1_channel_net }
+        - network: { get_resource: int_2_channel_net }
+        - network: { get_resource: int_3_channel_net }
+        - network: { get_resource: int_4_channel_net }
+      user_data_format: RAW
+      config_drive: True
+      user_data: 
+        str_replace:
+          template: |
+              {
+                "vnf": {
+                  "entries": {
+                    "vnfinstance"  : { "content": "__vnfinstance__" },
+                    "vnfc"         : { "content": "heimdall_int" }
+                  }
+                },
+                "heimdall": {
+                  "entries": {
+                    "slave-interfaces": { "content": "eth2 eth3 eth4 eth5" },
+                    "master-interface": { "content": "eth1" },
+                    "local-ip": { "content": "10.0.0.100" },
+                    "remote-ip": { "content": "10.0.0.200" }
+                  }
+                }
+              }
+          params:
+            __vnfinstance__:  { get_param: "OS::stack_id" }
+
+
+  heimdall_ext:
+    type: OS::Nova::Server
+    properties:
+      name: Heimdall EXT
+      image: HEIMDALL-CLOUD-19.0.0.20
+      flavor: HEIMDALL-FLAVOR
+      key_name: { get_param: key_name }
+      networks:
+        - port: { get_resource: management_port_ext }
+        - network: { get_param: ext_network }
+        - network: { get_resource: ext_1_channel_net }
+        - network: { get_resource: ext_2_channel_net }
+        - network: { get_resource: ext_3_channel_net }
+        - network: { get_resource: ext_4_channel_net }
+      user_data_format: RAW
+      config_drive: True
+      user_data: 
+        str_replace:
+          template: |
+              {
+                "vnf": {
+                  "entries": {
+                    "vnfinstance"  : { "content": "__vnfinstance__" },
+                    "vnfc"         : { "content": "heimdall_ext" }
+                  }
+                },
+                "heimdall": {
+                  "entries": {
+                    "slave-interfaces": { "content": "eth2 eth3 eth4 eth5" },
+                    "master-interface": { "content": "eth1" },
+                    "local-ip": { "content": "10.0.0.200" },
+                    "remote-ip": { "content": "10.0.0.100" }
+                  }
+                }
+              }
+          params:
+            __vnfinstance__:  { get_param: "OS::stack_id" }
+
+
+
+outputs:
+  server_id:
+    value: {get_attr: [servers,server_id]}
+  scalingdata:
+    value:
+      vnf_instance_id:  { get_param: "OS::stack_id" }
+      scale_in:         {get_attr: [pre_scale_in, alarm_url]}
+      scale_out:        {get_attr: [pre_scale_out, alarm_url]}
+      indicator:        pre_cpuload_avg
+      in_threshold:     {get_param: scale_in_threshold}
+      out_threshold:    {get_param: scale_out_threshold}
+
+      

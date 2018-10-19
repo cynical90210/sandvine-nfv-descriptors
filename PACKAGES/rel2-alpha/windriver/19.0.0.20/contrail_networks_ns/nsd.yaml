@@ -1,0 +1,121 @@
+heat_template_version: 2016-04-08
+
+description: Create specific ContrailV2 objects - Service Template, VN-left, VN-right, Service Instance, Network Policy
+
+parameters:
+  count:
+    type: number
+    description: Number of channels
+    label: Channel Count
+    default: 1
+  set:
+    type: string
+    description: Name/id of the set
+    default: pre
+  service_template_mode:
+    constraints:
+      - allowed_values: [transparent, in-network, in-network-nat]
+    type: string
+    default: transparent
+    description: Service template mode
+  service_template_version:
+    constraints:
+      - allowed_values: [1, 2]
+    type: string
+    default: 2
+    description: Service template version
+
+resources:
+
+# Create transparent (L2) Service Template for PRE
+
+  service_template:
+    type: OS::ContrailV2::ServiceTemplate
+    properties:
+      name:
+        str_replace:
+          template: $mode_v$version_Left_Right
+          params:
+            $mode: { get_param: service_template_mode }
+            $version: { get_param: service_template_version }
+      domain: "default-domain"
+      service_template_properties: {
+        service_template_properties_service_mode: { get_param: service_template_mode },
+        service_template_properties_interface_type: [
+          {
+          service_template_properties_interface_type_service_interface_type: "left"
+          },
+          {
+          service_template_properties_interface_type_service_interface_type: "right"
+          }
+        ],
+        service_template_properties_service_type: "firewall",
+        service_template_properties_version: { get_param: service_template_version },
+        service_template_properties_service_virtualization_type: "virtual-machine",
+        service_template_properties_ordered_interfaces: True
+      }
+
+# Create data-plane networking for PRE
+
+  channels:
+    type: OS::Heat::ResourceGroup
+    properties:
+      count: { get_param: count }
+      resource_def:
+        type: packetlogic::contrail_networks::channel
+        properties:
+          index: "%index%"
+          context: { get_param: set }
+          service_template_name: { get_attr: [service_template, fq_name]}
+
+outputs:
+
+  networks:
+    value:
+      repeat:
+        template:
+          <%foo%>
+        for_each:
+          <%foo%> :
+            str_split:
+              - ','
+              - list_join:
+                  - ','
+                  - get_attr:
+                    - channels
+                    - networks
+
+  ports:
+    value:
+      repeat:
+        template:
+          <%foo%>
+        for_each:
+          <%foo%> :
+            str_split:
+              - ','
+              - list_join:
+                  - ','
+                  - get_attr:
+                    - channels
+                    - ports
+  int_net:
+    value: { get_attr: [channels,int_net] }
+  ext_net:
+    value: { get_attr: [channels,ext_net] }
+
+  service_template:
+    value:
+      list_join: [ ':', {get_attr: [service_template, fq_name] } ]
+
+  service_instance_fqname:
+    value:
+      list_join: [ ':', { get_attr: [channels,service_instance_fqname] }]
+
+  trans_int_net_fqname:
+    value:
+      list_join: [ ':', { get_attr: [channels,trans_int_net_fqname] } ]
+
+  trans_ext_net_fqname:
+    value:
+      list_join: [ ':', { get_attr: [channels,trans_ext_net_fqname] } ]

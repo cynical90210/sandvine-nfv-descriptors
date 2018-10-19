@@ -1,0 +1,250 @@
+heat_template_version: 2016-04-08
+
+description: >
+  A network service (NS) representing a complete PL system
+
+parameters:
+
+  management_provider_network:
+    type: string
+    description: Name or ID of the provider network use for management network Floating IPs.
+
+  subscriber_provider_network:
+    type: string
+    description: Name or ID of the provider network use for subscriber network Floating IPs.
+
+  ns_instance_name:
+    type: string
+    description: Used for network prefixes
+
+resources:
+#
+# Networks
+#
+  service_net:
+    type: OS::Neutron::Net
+    properties:
+      name:
+        str_replace:
+          template:
+            __ns_instance_name__-service_net
+          params:
+            __ns_instance_name__: { get_param: ns_instance_name }
+
+  service_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network: { get_resource: service_net }
+      name:
+        str_replace:
+          template:
+            __ns_instance_name__-service_subnet
+          params:
+            __ns_instance_name__: { get_param: ns_instance_name }
+      cidr: 192.168.101.0/24
+
+  management_net:
+    type: OS::Neutron::Net
+    properties:
+      name:
+        str_replace:
+          template:
+            __ns_instance_name__-management_net
+          params:
+            __ns_instance_name__: { get_param: ns_instance_name }
+
+  management_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network: { get_resource: management_net }
+      name:
+        str_replace:
+          template:
+            __ns_instance_name__-management_subnet
+          params:
+            __ns_instance_name__: { get_param: ns_instance_name }
+      cidr: 192.168.100.0/24
+
+  management_router:
+    type: OS::Neutron::Router
+    properties:
+      name: Management router
+      external_gateway_info:
+         network: { get_param: management_provider_network}
+
+  management_router_interface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router_id: { get_resource: management_router }
+      subnet: { get_resource: management_subnet }
+
+  subscriber_net:
+    type: OS::Neutron::Net
+    properties:
+      name:
+        str_replace:
+          template:
+            __ns_instance_name__-subscriber_net
+          params:
+            __ns_instance_name__: { get_param: ns_instance_name }
+
+  subscriber_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network: { get_resource: subscriber_net }
+      name:
+        str_replace:
+          template:
+            __ns_instance_name__-subscriber_subnet
+          params:
+            __ns_instance_name__: { get_param: ns_instance_name }
+      cidr: 192.168.110.0/24
+      allocation_pools:
+        - start: 192.168.110.10
+          end: 192.168.110.100
+
+  subscriber_vip_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_resource: subscriber_net}
+      name: vPSM Virtual IP
+      ##port_security_enabled: false
+      fixed_ips:
+       - subnet: { get_resource: subscriber_subnet}
+         ip_address: 192.168.110.200
+
+  subscriber_router:
+    type: OS::Neutron::Router
+    properties:
+      name: Subscriber router
+      external_gateway_info:
+         network: { get_param: subscriber_provider_network}
+
+  subscriber_router_interface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router_id: { get_resource: subscriber_router }
+      subnet: { get_resource: subscriber_subnet }
+
+
+  subscriber_vip_fip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network: { get_param: subscriber_provider_network }
+
+  subscriber fip_assign:
+    type: OS::Neutron::FloatingIPAssociation
+    properties:
+      floatingip_id: { get_resource: subscriber_vip_fip }
+      port_id: { get_resource: subscriber_vip_port }
+
+  qsync_net:
+    type: OS::Neutron::Net
+    properties:
+      name:
+        str_replace:
+          template:
+            __ns_instance_name__-qsync_net
+          params:
+            __ns_instance_name__: { get_param: ns_instance_name }
+
+  qsync_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network: { get_resource: qsync_net }
+      name:
+        str_replace:
+          template:
+            __ns_instance_name__-qsync_subnet
+          params:
+            __ns_instance_name__: { get_param: ns_instance_name }
+      cidr: 192.168.120.0/24
+
+  flowsync_net:
+    type: OS::Neutron::Net
+    properties:
+      name:
+        str_replace:
+          template:
+            __ns_instance_name__-flowsync_net
+          params:
+            __ns_instance_name__: { get_param: ns_instance_name }
+
+  flowsync_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network: { get_resource: flowsync_net }
+      name: flowsync_subnet
+      name:
+        str_replace:
+          template:
+            __ns_instance_name__-flowsync_subnet
+          params:
+            __ns_instance_name__: { get_param: ns_instance_name }
+      cidr: 192.168.121.0/24
+
+  monitor_net:
+    type: OS::Neutron::Net
+    properties:
+      name:
+        str_replace:
+          template:
+            __ns_instance_name__-monitor_net
+          params:
+            __ns_instance_name__: { get_param: ns_instance_name }
+
+  monitor_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network: { get_resource: monitor_net }
+      name:
+        str_replace:
+          template:
+            __ns_instance_name__-monitor_subnet
+          params:
+            __ns_instance_name__: { get_param: ns_instance_name }
+      cidr: 192.168.123.0/24
+
+
+  dummy_net:
+    type: OS::Neutron::Net
+    properties:
+      name:
+        str_replace:
+          template:
+            __ns_instance_name__-dummy_net
+          params:
+            __ns_instance_name__: { get_param: ns_instance_name }
+
+  dummy_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network: { get_resource: dummy_net }
+      name:
+        str_replace:
+          template:
+            __ns_instance_name__-dummy_subnet
+          params:
+            __ns_instance_name__: { get_param: ns_instance_name }
+      cidr: 192.168.122.0/24
+
+outputs:
+  management_net:
+    value: { get_attr: [management_net,show,id] }
+  service_net:
+    value: { get_attr: [service_net,show,id] }
+  subscriber_net:
+    value: { get_attr: [subscriber_net,show,id] }
+  qsync_net:
+    value: { get_attr: [qsync_net,show,id] }
+  flowsync_net:
+    value: { get_attr: [flowsync_net,show,id] }
+  monitor_net:
+    value: { get_attr: [monitor_net,show,id] }
+  dummy_net:
+    value: { get_attr: [dummy_net,show,id] }
+  subscriber_provider:
+    value: { get_param: subscriber_provider_network}
+  management_provider:
+    value: { get_param: management_provider_network}
+

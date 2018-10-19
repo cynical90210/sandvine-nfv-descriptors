@@ -1,0 +1,79 @@
+heat_template_version: 2016-04-08
+
+description: >
+  A set of networks to be used when testing other NS:es. Provides the network environment.
+
+resources:
+
+  dataplane_int_net:
+    type: OS::Neutron::Net
+    properties:
+      name:
+        str_replace:
+          template:
+            __ns_instance_name__-dataplane_int_network
+          params:
+            __ns_instance_name__: { get_param: "OS::stack_name" }
+      port_security_enabled: false
+
+  dataplane_int_subnet:    
+    type: OS::Neutron::Subnet
+    properties:
+      name:
+        str_replace:
+          template:
+            __ns_instance_name__-dataplane_int_subnet
+          params:
+            __ns_instance_name__: { get_param: "OS::stack_name" }
+      network_id: { get_resource: dataplane_int_net }
+      cidr: 192.168.140.0/24
+
+  dataplane_ext_net:
+    type: OS::Neutron::Net
+    properties:
+      name:
+        str_replace:
+          template:
+            __ns_instance_name__-dataplane_ext_network
+          params:
+            __ns_instance_name__: { get_param: "OS::stack_name" }
+      port_security_enabled: false
+
+  dataplane_ext_subnet:    
+    type: OS::Neutron::Subnet
+    properties:
+      name:
+        str_replace:
+          template:
+            __ns_instance_name__-dataplane_ext_subnet
+          params:
+            __ns_instance_name__: { get_param: "OS::stack_name" }
+      network_id: { get_resource: dataplane_ext_net }
+      cidr: 192.168.140.0/24
+
+
+  controlplane_subscriber_net:
+    type: OS::Neutron::Net
+    properties:
+      name:
+        str_replace:
+          template:
+            __ns_instance_name__-controlplane_subscriber_network
+          params:
+            __ns_instance_name__: { get_param: "OS::stack_name" }
+
+  controlplane_subscriber_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network: { get_resource: controlplane_subscriber_net }
+      name:
+        str_replace:
+          template:
+            __ns_instance_name__-controlplane_subscriber_subnet
+          params:
+            __ns_instance_name__: { get_param: "OS::stack_name" }
+      cidr: 192.168.110.0/24
+      allocation_pools:
+        - start: 192.168.110.10
+          end: 192.168.110.100
+
